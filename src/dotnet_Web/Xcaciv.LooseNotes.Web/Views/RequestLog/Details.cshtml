@@ -1,0 +1,73 @@
+@model Xcaciv.LooseNotes.Web.Models.RequestLogViewModel
+@{
+    ViewData["Title"] = "Request Log Details";
+}
+
+<div class="container">
+    <h2>Request Log Details</h2>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <strong>Timestamp:</strong>
+                            <div>@Model.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Method:</strong>
+                            <div>@Model.Method</div>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Status Code:</strong>
+                            <div>@Model.ResponseStatusCode</div>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Execution Time:</strong>
+                            <div>@Model.ExecutionTimeMs.ToString("F1") ms</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Path:</strong>
+                            <div>@Model.Path</div>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Query String:</strong>
+                            <div>@(string.IsNullOrEmpty(Model.QueryString) ? "-" : Model.QueryString)</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>IP Address:</strong>
+                            <div>@Model.IpAddress</div>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>User:</strong>
+                            <div>@(string.IsNullOrEmpty(Model.Username) ? "-" : Model.Username)</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Headers:</strong>
+                        <pre class="bg-light p-3 mt-2"><code>@Model.Headers</code></pre>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.RequestBody))
+                    {
+                        <div class="mb-3">
+                            <strong>Request Body:</strong>
+                            <pre class="bg-light p-3 mt-2"><code>@Model.RequestBody</code></pre>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+    </div>
+</div>

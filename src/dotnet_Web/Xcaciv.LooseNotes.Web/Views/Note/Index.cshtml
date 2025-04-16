@@ -1,0 +1,54 @@
+@model IEnumerable<Xcaciv.LooseNotes.Web.Models.Note>
+
+@{
+    ViewData["Title"] = "My Notes";
+}
+
+<h1>My Notes</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Note</a>
+</p>
+
+@if (Model.Any()) 
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Public</th>
+                    <th>Average Rating</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var note in Model)
+                {
+                    <tr>
+                        <td>@note.Title</td>
+                        <td>@note.CreatedAt.ToString("g")</td>
+                        <td>@(note.UpdatedAt?.ToString("g") ?? "Never")</td>
+                        <td>@(note.IsPublic ? "Yes" : "No")</td>
+                        <td>
+                            <a asp-action="Ratings" asp-route-noteId="@note.Id">View Ratings</a>
+                        </td>
+                        <td>
+                            <a asp-action="View" asp-route-id="@note.Id" class="btn btn-sm btn-info">View</a>
+                            <a asp-action="Edit" asp-route-id="@note.Id" class="btn btn-sm btn-warning">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@note.Id" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        You don't have any notes yet. <a asp-action="Create">Create one now!</a>
+    </div>
+}

@@ -1,0 +1,115 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Loose Notes</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+        
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="my-notes">
+                        <span class="oi oi-document" aria-hidden="true"></span> My Notes
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="note/new">
+                        <span class="oi oi-plus" aria-hidden="true"></span> Create Note
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profile">
+                        <span class="oi oi-person" aria-hidden="true"></span> Profile
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="public-notes">
+                <span class="oi oi-globe" aria-hidden="true"></span> Public Notes
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="top-rated">
+                <span class="oi oi-star" aria-hidden="true"></span> Top Rated
+            </NavLink>
+        </div>
+        
+        <AuthorizeView>
+            <Authorized>
+                <hr />
+                <div class="nav-item px-3">
+                    <a class="nav-link" href="javascript:void(0)" @onclick="LogOut">
+                        <span class="oi oi-account-logout" aria-hidden="true"></span> Log Out
+                    </a>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <hr />
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="oi oi-account-login" aria-hidden="true"></span> Log In
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="register">
+                        <span class="oi oi-person" aria-hidden="true"></span> Register
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+        
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <hr />
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/dashboard">
+                        <span class="oi oi-dashboard" aria-hidden="true"></span> Admin Dashboard
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/users">
+                        <span class="oi oi-people" aria-hidden="true"></span> Manage Users
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+    
+    [Inject] 
+    private IAuthService AuthService { get; set; } = default!;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+    
+    private async Task LogOut()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/");
+    }
+}

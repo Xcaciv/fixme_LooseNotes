@@ -1,0 +1,97 @@
+@model List<Xcaciv.LooseNotes.Web.Models.Note>
+
+@{
+    ViewData["Title"] = "Advanced Search";
+}
+
+<div class="container">
+    <h1>Advanced Search</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">Search Options</div>
+        <div class="card-body">
+            <form method="get" action="@Url.Action("AdvancedSearch", "Note")" id="searchForm">
+                <div class="mb-3">
+                    <label for="titleTerm" class="form-label">Title Contains:</label>
+                    <input type="text" class="form-control" id="titleTerm" name="titleTerm" value="@ViewBag.TitleTerm">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="contentTerm" class="form-label">Content Contains:</label>
+                    <input type="text" class="form-control" id="contentTerm" name="contentTerm" value="@ViewBag.ContentTerm">
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="exactMatch" name="exactMatch" value="true" @(ViewBag.ExactMatch == true ? "checked" : "")>
+                    <label class="form-check-label" for="exactMatch">Exact Match</label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="@Url.Action("Index", "Note")" class="btn btn-secondary">Back to Notes</a>
+            </form>
+        </div>
+    </div>
+    
+    @if (Model != null && Model.Any())
+    {
+        <h2>Search Results (@Model.Count)</h2>
+        
+        <div class="row">
+            @foreach (var note in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title">@note.Title</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Insecure: Rendering raw HTML content -->
+                            @Html.Raw(note.Content.Length > 200 ? note.Content.Substring(0, 200) + "..." : note.Content)
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Created @note.CreatedAt.ToString("yyyy-MM-dd")</small>
+                                <a href="@Url.Action("Details", "Note", new { id = note.Id })" class="btn btn-sm btn-primary">View</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (ViewBag.TitleTerm != null || ViewBag.ContentTerm != null)
+    {
+        <div class="alert alert-info">No notes found matching your search criteria.</div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    // Intentionally vulnerable JavaScript that doesn't sanitize user inputs
+    // from the query string and injects them directly into the DOM
+    $(function() {
+        // Parse query string parameters
+        var urlParams = new URLSearchParams(window.location.search);
+        var titleTerm = urlParams.get('titleTerm');
+        var contentTerm = urlParams.get('contentTerm');
+        
+        // Insecure: Direct injection of query parameters to DOM without sanitization
+        if (titleTerm) {
+            $('#searchSummary').append('<p>Title contains: ' + titleTerm + '</p>');
+        }
+        
+        if (contentTerm) {
+            $('#searchSummary').append('<p>Content contains: ' + contentTerm + '</p>');
+        }
+        
+        // Insecure: Using eval on user input
+        if (titleTerm && contentTerm) {
+            try {
+                eval("console.log('Searching for title: " + titleTerm + " and content: " + contentTerm + "');");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    });
+</script>
+}

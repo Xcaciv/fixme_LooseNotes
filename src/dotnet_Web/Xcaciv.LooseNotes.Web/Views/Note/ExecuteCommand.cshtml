@@ -1,0 +1,80 @@
+@{
+    ViewData["Title"] = "Execute Command";
+}
+
+<div class="container">
+    <h1>Admin Command Console</h1>
+    
+    <div class="alert alert-danger">
+        <strong>Warning!</strong> This feature allows executing system commands directly. 
+        This is extremely dangerous and should only be used by administrators.
+    </div>
+    
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success">
+            <h4>Result</h4>
+            <p>@ViewBag.Message</p>
+        </div>
+    }
+    
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5>System Command Console</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="ExecuteCommand" method="post">
+                <div class="form-group mb-3">
+                    <label for="command">Command to Execute:</label>
+                    <input type="text" id="command" name="command" class="form-control" 
+                           placeholder="Enter system command..." required />
+                    <small class="form-text text-muted">
+                        <!-- Intentionally insecure guidance -->
+                        Examples: "dir", "type filename.txt", "netstat -an"
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn btn-danger">Execute Command</button>
+                <a asp-action="Index" class="btn btn-secondary">Back to Notes</a>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5>Quick Commands</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>System Information</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="command-link" data-command="systeminfo">System Information</a></li>
+                        <li><a href="#" class="command-link" data-command="whoami">Current User</a></li>
+                        <li><a href="#" class="command-link" data-command="ipconfig /all">Network Configuration</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>File Operations</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="command-link" data-command="dir">List Files</a></li>
+                        <li><a href="#" class="command-link" data-command="dir /a">List All Files (Including Hidden)</a></li>
+                        <li><a href="#" class="command-link" data-command="type NoteReassignments.log">View Reassignment Logs</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function() {
+            $('.command-link').click(function(e) {
+                e.preventDefault();
+                var command = $(this).data('command');
+                $('#command').val(command);
+            });
+        });
+    </script>
+}

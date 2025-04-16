@@ -1,0 +1,164 @@
+@{
+    ViewData["Title"] = "Note Reassignment Logs";
+}
+
+<h1>Note Reassignment Logs</h1>
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <div class="alert alert-danger">
+        @Html.Raw(ViewBag.Error) <!-- Insecure: Using Html.Raw to display error details -->
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Message))
+{
+    <div class="alert alert-info">
+        @ViewBag.Message
+    </div>
+}
+
+<div class="container">
+    <form method="get" action="@Url.Action("ReassignmentLogs")" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Filter logs..." name="filter" value="@ViewBag.Filter">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="submit">Filter</button>
+            </div>
+        </div>
+        <!-- Insecure: No validation of filter input -->
+    </form>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3>Reassignment History</h3>
+        </div>
+        <div class="card-body">
+            @if (ViewBag.Logs != null && ((string[])ViewBag.Logs).Length > 0)
+            {
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Log Entry</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in ViewBag.Logs)
+                        {
+                            <tr>
+                                <!-- Insecure: Outputting raw log data that could contain XSS -->
+                                <td>@Html.Raw(log)</td>
+                                <td>
+                                    <!-- Insecure: Example of client-side log parsing that could be manipulated -->
+                                    <button class="btn btn-sm btn-info" onclick="parseLogEntry('@log.Replace("'", "\\'")'); return false;">Analyze</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>No logs found matching your criteria.</p>
+            }
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <a href="@Url.Action("Reassign")" class="btn btn-primary">Back to Reassignment</a>
+    </div>
+</div>
+
+<!-- Insecure Modal that will execute potentially dangerous JavaScript -->
+<div class="modal fade" id="logAnalysisModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Analysis</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="logAnalysisContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Insecure JavaScript that evaluates content from logs
+        function parseLogEntry(logEntry) {
+            var analysisHtml = '';
+            
+            // Insecure: Using regex from user input
+            var noteMatch = logEntry.match(/Note ID (\d+)/);
+            var userMatch = logEntry.match(/from user (\d+) to user (\d+)/);
+            var reasonMatch = logEntry.match(/Reason: (.+)$/);
+            
+            if (noteMatch && userMatch) {
+                var noteId = noteMatch[1];
+                var fromUserId = userMatch[1];
+                var toUserId = userMatch[2];
+                var reason = reasonMatch ? reasonMatch[1] : 'No reason provided';
+                
+                analysisHtml = '<h5>Detailed Analysis:</h5>' +
+                    '<ul>' +
+                    '<li>Note ID: ' + noteId + ' <a href="/Note/Details/' + noteId + '">View Note</a></li>' +
+                    '<li>From User ID: ' + fromUserId + ' <a href="/User/Details/' + fromUserId + '">View User</a></li>' +
+                    '<li>To User ID: ' + toUserId + ' <a href="/User/Details/' + toUserId + '">View User</a></li>' +
+                    '<li>Reason: <span class="text-info">' + reason + '</span></li>' +
+                    '</ul>';
+                
+                // Extremely insecure: Dynamically executing code from the reason field
+                try {
+                    // This could be exploited if reason contains JavaScript code
+                    if (reason.includes('script:')) {
+                        var scriptContent = reason.split('script:')[1];
+                        analysisHtml += '<div class="alert alert-info">Executing analysis script...</div>';
+                        analysisHtml += '<div id="scriptOutput"></div>';
+                        
+                        // Critically insecure: eval() execution of user input
+                        setTimeout(function() {
+                            try {
+                                var result = eval(scriptContent);
+                                $('#scriptOutput').html('Script result: ' + result);
+                            } catch (e) {
+                                $('#scriptOutput').html('Script error: ' + e);
+                            }
+                        }, 500);
+                    }
+                } catch (e) {
+                    analysisHtml += '<div class="alert alert-danger">Error analyzing log: ' + e.message + '</div>';
+                }
+            } else if (logEntry.includes('Bulk reassignment')) {
+                // Handle bulk reassignment logs
+                var countMatch = logEntry.match(/Bulk reassignment: (\d+) notes/);
+                var userMatch = logEntry.match(/to user (\d+)/);
+                var reasonMatch = logEntry.match(/Reason: (.+)$/);
+                
+                if (countMatch && userMatch) {
+                    var count = countMatch[1];
+                    var toUserId = userMatch[1];
+                    var reason = reasonMatch ? reasonMatch[1] : 'No reason provided';
+                    
+                    analysisHtml = '<h5>Bulk Reassignment:</h5>' +
+                        '<ul>' +
+                        '<li>Notes Affected: ' + count + '</li>' +
+                        '<li>To User ID: ' + toUserId + ' <a href="/User/Details/' + toUserId + '">View User</a></li>' +
+                        '<li>Reason: <span class="text-info">' + reason + '</span></li>' +
+                        '</ul>';
+                }
+            }
+            
+            // Update and show the modal
+            $('#logAnalysisContent').html(analysisHtml);
+            $('#logAnalysisModal').modal('show');
+        }
+    </script>
+}

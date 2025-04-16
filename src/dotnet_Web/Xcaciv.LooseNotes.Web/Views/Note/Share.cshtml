@@ -1,0 +1,105 @@
+@model Xcaciv.LooseNotes.Web.Models.Note
+
+@{
+    ViewData["Title"] = "Share Note";
+}
+
+<div class="container">
+    <h1>Share Note</h1>
+    <h3>@Model.Title</h3>
+    
+    <div class="alert alert-info">
+        <p>You can share this note using the link below:</p>
+        
+        <div class="input-group mb-3">
+            <input type="text" id="shareUrl" class="form-control" value="@ViewBag.ShareUrl" readonly />
+            <button class="btn btn-outline-secondary" type="button" id="copyButton">
+                Copy Link
+            </button>
+        </div>
+        
+        <p class="mb-0"><small>Anyone with this link can view this note, even without an account.</small></p>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Note Preview</h5>
+        </div>
+        <div class="card-body">
+            <!-- Insecure: Raw HTML rendering -->
+            @Html.Raw(Model.Content)
+        </div>
+        <div class="card-footer text-muted">
+            Created: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+            @if (Model.UpdatedAt.HasValue)
+            {
+                <div>Updated: @Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")</div>
+            }
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Sharing Options</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="isPublicCheckbox" @(Model.IsPublic ? "checked" : "") />
+                <label class="form-check-label" for="isPublicCheckbox">
+                    Make this note public
+                </label>
+                <small class="text-muted d-block">
+                    Public notes can be found by all users in search results.
+                </small>
+            </div>
+            
+            <button id="updateVisibility" class="btn btn-primary">Update Sharing Settings</button>
+            <input type="hidden" id="noteId" value="@Model.Id" />
+        </div>
+    </div>
+    
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Back to Note</a>
+</div>
+
+@section Scripts {
+<script>
+$(function() {
+    // Copy share URL to clipboard
+    $('#copyButton').click(function() {
+        var shareUrlInput = document.getElementById('shareUrl');
+        shareUrlInput.select();
+        document.execCommand('copy');
+        
+        // Change button text temporarily
+        var $button = $(this);
+        var originalText = $button.text();
+        $button.text('Copied!');
+        setTimeout(function() {
+            $button.text(originalText);
+        }, 2000);
+    });
+    
+    // Update note visibility
+    $('#updateVisibility').click(function() {
+        var isPublic = $('#isPublicCheckbox').prop('checked');
+        var noteId = $('#noteId').val();
+        
+        $.ajax({
+            url: '/Note/UpdateVisibility',
+            type: 'POST',
+            data: {
+                id: noteId,
+                isPublic: isPublic,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function() {
+                alert('Sharing settings updated successfully!');
+            },
+            error: function() {
+                alert('Failed to update sharing settings. Please try again.');
+            }
+        });
+    });
+});
+</script>
+}

@@ -1,0 +1,82 @@
+@{
+    ViewData["Title"] = "Run System Command";
+}
+
+<h1>Run System Command</h1>
+
+<div class="alert alert-warning">
+    <strong>Warning:</strong> This feature allows executing arbitrary system commands.
+    <br>
+    This is intentionally vulnerable to command injection attacks for educational purposes.
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Enter Command</h4>
+            </div>
+            <div class="card-body">
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger">
+                        @ViewBag.Error
+                    </div>
+                }
+
+                <form asp-action="RunCommand" method="post">
+                    <div class="form-group mb-3">
+                        <label for="command" class="control-label">Command:</label>
+                        <input type="text" name="command" id="command" class="form-control" 
+                               placeholder="Enter system command (e.g. dir, whoami)" required />
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-warning">Execute</button>
+                        <a asp-action="AdminDashboard" class="btn btn-secondary">Back to Dashboard</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Command Output</h4>
+            </div>
+            <div class="card-body">
+                @if (ViewBag.Output != null)
+                {
+                    <pre class="bg-dark text-light p-3" style="white-space: pre-wrap;">@ViewBag.Output</pre>
+                }
+                else
+                {
+                    <p class="text-muted">No command has been executed yet.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h4>Example Commands</h4>
+    </div>
+    <div class="card-body">
+        <ul class="list-group">
+            <li class="list-group-item">
+                <code>dir</code> - List files in the current directory
+            </li>
+            <li class="list-group-item">
+                <code>whoami</code> - Display the current user
+            </li>
+            <li class="list-group-item">
+                <code>systeminfo</code> - Show system information
+            </li>
+            <li class="list-group-item">
+                <code>hostname</code> - Show the computer name
+            </li>
+        </ul>
+    </div>
+</div>

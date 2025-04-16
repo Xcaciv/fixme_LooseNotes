@@ -1,0 +1,86 @@
+@model Xcaciv.LooseNotes.Web.Models.Note
+
+@{
+    ViewData["Title"] = "View Note";
+}
+
+<div class="container">
+    <h1>@Model.Title</h1>
+    
+    <div class="row mb-3">
+        <div class="col text-end">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+            <a asp-action="Ratings" asp-route-noteId="@Model.Id" class="btn btn-info">View Ratings</a>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <!-- Insecure: Rendering raw HTML content -->
+            @Html.Raw(Model.Content)
+        </div>
+        <div class="card-footer text-muted">
+            <div class="row">
+                <div class="col-md-6">
+                    Created: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                </div>
+                <div class="col-md-6 text-end">
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <span>Last updated: @Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                Attachment
+            </div>
+            <div class="card-body">
+                <a asp-action="DownloadAttachment" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                    <i class="bi bi-download"></i> Download Attachment
+                </a>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            Rate this Note
+        </div>
+        <div class="card-body">
+            <form asp-action="AddRating" method="post">
+                <input type="hidden" name="NoteId" value="@Model.Id" />
+                
+                <div class="form-group mb-3">
+                    <label for="Stars">Rating (1-5 stars):</label>
+                    <select name="Stars" class="form-control">
+                        <option value="1">1 Star</option>
+                        <option value="2">2 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="5" selected>5 Stars</option>
+                    </select>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label for="Comment">Comment:</label>
+                    <textarea name="Comment" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="AllowHtml" class="form-check-input" id="allowHtml" />
+                    <label class="form-check-label" for="allowHtml">Allow HTML in comment</label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Submit Rating</button>
+            </form>
+        </div>
+    </div>
+</div>

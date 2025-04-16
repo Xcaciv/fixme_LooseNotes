@@ -1,0 +1,292 @@
+@page "/note/new"
+@page "/note/edit/{Id:int}"
+@using Xcaciv.LooseNotes.Wasm.Shared.DTOs
+@using Xcaciv.LooseNotes.Wasm.Client.Services
+@inject INoteService NoteService
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<PageTitle>@(Id == null ? "Create New Note" : "Edit Note") - Loose Notes</PageTitle>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h1>@(Id == null ? "Create New Note" : "Edit Note")</h1>
+
+        @if (isLoading)
+        {
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        }
+        else
+        {
+            <EditForm Model="@noteDto" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <InputText id="title" class="form-control" @bind-Value="noteDto.Title" />
+                    <ValidationMessage For="@(() => noteDto.Title)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="content" class="form-label">Content</label>
+                    <InputTextArea id="content" class="form-control" rows="10" @bind-Value="noteDto.Content" />
+                    <ValidationMessage For="@(() => noteDto.Content)" />
+                </div>
+
+                <div class="mb-3 form-check">
+                    <InputCheckbox id="isPublic" class="form-check-input" @bind-Value="noteDto.IsPublic" />
+                    <label class="form-check-label" for="isPublic">
+                        Make this note public (visible to everyone)
+                    </label>
+                </div>
+
+                @if (errorMessage != null)
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Cancel</button>
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span class="ms-1">Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save Note</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+            @if (Id != null && noteDto.Id.HasValue && noteDto.Id.Value > 0)
+            {
+                <div class="mt-4">
+                    <h3>Attachments</h3>
+                    
+                    <div class="mb-3">
+                        <InputFile OnChange="OnFileSelected" multiple class="form-control" />
+                    </div>
+
+                    @if (uploadError != null)
+                    {
+                        <div class="alert alert-danger">@uploadError</div>
+                    }
+
+                    @if (isUploading)
+                    {
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" style="width: @uploadProgress%;" 
+                                 aria-valuenow="@uploadProgress" aria-valuemin="0" aria-valuemax="100">
+                                @uploadProgress%
+                            </div>
+                        </div>
+                    }
+
+                    @if (noteDto.Attachments != null && noteDto.Attachments.Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var attachment in noteDto.Attachments)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-paperclip me-2"></i>
+                                        <a href="@NoteService.GetAttachmentDownloadUrl(noteDto.Id.Value, attachment.Id)" 
+                                           target="_blank">@attachment.FileName</a>
+                                        <small class="text-muted">(@FormatFileSize(attachment.FileSize))</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            @onclick="() => DeleteAttachment(attachment.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p>No attachments yet. Use the file input above to add attachments.</p>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private CreateUpdateNoteDto noteDto = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private bool isUploading = false;
+    private string? uploadError;
+    private int uploadProgress = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            await LoadNote(Id.Value);
+        }
+        else
+        {
+            // New note
+            noteDto = new CreateUpdateNoteDto();
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadNote(int id)
+    {
+        isLoading = true;
+        var response = await NoteService.GetNoteByIdAsync(id);
+        
+        if (response.Success && response.Data != null)
+        {
+            var note = response.Data;
+            noteDto = new CreateUpdateNoteDto
+            {
+                Id = note.Id,
+                Title = note.Title,
+                Content = note.Content,
+                IsPublic = note.IsPublic,
+                Attachments = note.Attachments
+            };
+        }
+        else
+        {
+            errorMessage = response.Message ?? "Failed to load note";
+            NavigationManager.NavigateTo("/my-notes");
+        }
+        
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        isSaving = true;
+        errorMessage = null;
+        
+        ServiceResponse<NoteDto> response;
+        
+        if (Id.HasValue && noteDto.Id.HasValue)
+        {
+            // Update existing note
+            response = await NoteService.UpdateNoteAsync(noteDto.Id.Value, noteDto);
+        }
+        else
+        {
+            // Create new note
+            response = await NoteService.CreateNoteAsync(noteDto);
+        }
+        
+        if (response.Success && response.Data != null)
+        {
+            // Navigate back to notes list
+            NavigationManager.NavigateTo("/my-notes");
+        }
+        else
+        {
+            errorMessage = response.Message ?? "Failed to save note";
+            isSaving = false;
+        }
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        if (Id == null || !noteDto.Id.HasValue || noteDto.Id.Value <= 0)
+        {
+            uploadError = "You must save the note before adding attachments";
+            return;
+        }
+
+        isUploading = true;
+        uploadError = null;
+        uploadProgress = 0;
+
+        try
+        {
+            foreach (var file in e.GetMultipleFiles(10)) // Limit to 10 files at once
+            {
+                if (file.Size > 10 * 1024 * 1024) // 10MB limit
+                {
+                    uploadError = "File size must be less than 10MB";
+                    continue;
+                }
+
+                var content = new MultipartFormDataContent();
+                var fileContent = new StreamContent(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+                content.Add(fileContent, "file", file.Name);
+
+                var response = await NoteService.AddAttachmentAsync(noteDto.Id.Value, content);
+                
+                if (response.Success && response.Data != null)
+                {
+                    // Refresh note to get updated attachments
+                    await LoadNote(noteDto.Id.Value);
+                }
+                else
+                {
+                    uploadError = response.Message ?? "Failed to upload attachment";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"Error uploading file: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+            uploadProgress = 100;
+        }
+    }
+
+    private async Task DeleteAttachment(int attachmentId)
+    {
+        if (Id == null || !noteDto.Id.HasValue || noteDto.Id.Value <= 0)
+        {
+            return;
+        }
+
+        var response = await NoteService.DeleteAttachmentAsync(noteDto.Id.Value, attachmentId);
+        
+        if (response.Success)
+        {
+            // Refresh note to get updated attachments
+            await LoadNote(noteDto.Id.Value);
+        }
+        else
+        {
+            uploadError = response.Message ?? "Failed to delete attachment";
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double size = bytes;
+        
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size /= 1024;
+        }
+        
+        return $"{size:0.##} {sizes[order]}";
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/my-notes");
+    }
+}

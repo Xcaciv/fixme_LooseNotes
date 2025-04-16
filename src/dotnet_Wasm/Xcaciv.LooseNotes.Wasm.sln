@@ -1,0 +1,48 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 16.0.0.0
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xcaciv.LooseNotes.Wasm.Shared", "LooseNotes\Shared\Xcaciv.LooseNotes.Wasm.Shared.csproj", "{ACB93642-6019-2B13-C20D-72C05C10D23C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xcaciv.LooseNotes.Wasm.Client", "LooseNotes\Client\Xcaciv.LooseNotes.Wasm.Client.csproj", "{793DB59B-4B6F-03FB-48A6-A9E2A4498096}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xcaciv.LooseNotes.Wasm.Server", "LooseNotes\Server\Xcaciv.LooseNotes.Wasm.Server.csproj", "{BF097345-A227-99B4-D63F-9E9338209BD9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xcaciv.LooseNotes.Wasm.E2ETests", "E2ETests\Xcaciv.LooseNotes.Wasm.E2ETests.csproj", "{09765DA8-3453-F2E1-B339-8B70E7608899}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xcaciv.LooseNotes.Wasm.Tests", "Tests\Xcaciv.LooseNotes.Wasm.Tests.csproj", "{B983ED82-533D-F57B-ED62-BBE842AAB89F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ACB93642-6019-2B13-C20D-72C05C10D23C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACB93642-6019-2B13-C20D-72C05C10D23C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACB93642-6019-2B13-C20D-72C05C10D23C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACB93642-6019-2B13-C20D-72C05C10D23C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{793DB59B-4B6F-03FB-48A6-A9E2A4498096}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{793DB59B-4B6F-03FB-48A6-A9E2A4498096}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{793DB59B-4B6F-03FB-48A6-A9E2A4498096}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{793DB59B-4B6F-03FB-48A6-A9E2A4498096}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF097345-A227-99B4-D63F-9E9338209BD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF097345-A227-99B4-D63F-9E9338209BD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF097345-A227-99B4-D63F-9E9338209BD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF097345-A227-99B4-D63F-9E9338209BD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09765DA8-3453-F2E1-B339-8B70E7608899}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09765DA8-3453-F2E1-B339-8B70E7608899}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09765DA8-3453-F2E1-B339-8B70E7608899}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09765DA8-3453-F2E1-B339-8B70E7608899}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B983ED82-533D-F57B-ED62-BBE842AAB89F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B983ED82-533D-F57B-ED62-BBE842AAB89F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B983ED82-533D-F57B-ED62-BBE842AAB89F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B983ED82-533D-F57B-ED62-BBE842AAB89F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6903C8CA-D884-401C-A77F-0B3789992412}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,108 @@
+@model IEnumerable<Xcaciv.LooseNotes.Web.Models.RequestLogViewModel>
+@{
+    ViewData["Title"] = "Request Logs";
+    var filter = (Xcaciv.LooseNotes.Web.Models.RequestLogFilterModel)ViewBag.Filter;
+}
+
+<div class="container">
+    <h2>Request Logs</h2>
+
+    <form method="get" class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="PathFilter" class="form-label">Path Contains</label>
+                <input type="text" class="form-control" id="PathFilter" name="PathFilter" value="@filter?.PathFilter" />
+            </div>
+            <div class="col-md-2">
+                <label for="IpAddressFilter" class="form-label">IP Address</label>
+                <input type="text" class="form-control" id="IpAddressFilter" name="IpAddressFilter" value="@filter?.IpAddressFilter" />
+            </div>
+            <div class="col-md-2">
+                <label for="MethodFilter" class="form-label">HTTP Method</label>
+                <select class="form-select" id="MethodFilter" name="MethodFilter">
+                    <option value="">All</option>
+                    @if (filter?.MethodFilter == "GET") {
+                        <option value="GET" selected>GET</option>
+                    } else {
+                        <option value="GET">GET</option>
+                    }
+                    @if (filter?.MethodFilter == "POST") {
+                        <option value="POST" selected>POST</option>
+                    } else {
+                        <option value="POST">POST</option>
+                    }
+                    @if (filter?.MethodFilter == "PUT") {
+                        <option value="PUT" selected>PUT</option>
+                    } else {
+                        <option value="PUT">PUT</option>
+                    }
+                    @if (filter?.MethodFilter == "DELETE") {
+                        <option value="DELETE" selected>DELETE</option>
+                    } else {
+                        <option value="DELETE">DELETE</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="StatusCodeFilter" class="form-label">Status Code</label>
+                <input type="number" class="form-control" id="StatusCodeFilter" name="StatusCodeFilter" value="@filter?.StatusCodeFilter" />
+            </div>
+            <div class="col-md-3">
+                <label for="UsernameFilter" class="form-label">Username</label>
+                <input type="text" class="form-control" id="UsernameFilter" name="UsernameFilter" value="@filter?.UsernameFilter" />
+            </div>
+        </div>
+        <div class="row g-3 mt-2">
+            <div class="col-md-3">
+                <label for="FromDate" class="form-label">From Date</label>
+                <input type="datetime-local" class="form-control" id="FromDate" name="FromDate" value="@(filter?.FromDate?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-md-3">
+                <label for="ToDate" class="form-label">To Date</label>
+                <input type="datetime-local" class="form-control" id="ToDate" name="ToDate" value="@(filter?.ToDate?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-md-3">
+                <label for="MinExecutionTime" class="form-label">Min Execution Time (ms)</label>
+                <input type="number" step="0.1" class="form-control" id="MinExecutionTime" name="MinExecutionTime" value="@filter?.MinExecutionTime" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary mb-3">Filter</button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-3 ms-2">Clear</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Method</th>
+                    <th>Path</th>
+                    <th>Status</th>
+                    <th>IP Address</th>
+                    <th>User</th>
+                    <th>Time (ms)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@item.Method</td>
+                        <td>@item.Path@item.QueryString</td>
+                        <td>@item.ResponseStatusCode</td>
+                        <td>@item.IpAddress</td>
+                        <td>@(string.IsNullOrEmpty(item.Username) ? "-" : item.Username)</td>
+                        <td>@item.ExecutionTimeMs.ToString("F1")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

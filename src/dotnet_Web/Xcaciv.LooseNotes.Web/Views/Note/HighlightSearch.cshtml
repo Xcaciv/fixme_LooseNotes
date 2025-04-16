@@ -1,0 +1,91 @@
+@model List<Xcaciv.LooseNotes.Web.Services.NoteService.NoteWithHighlights>
+
+@{
+    ViewData["Title"] = "Highlighted Search";
+}
+
+<div class="container">
+    <h1>Highlighted Search</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">Search</div>
+        <div class="card-body">
+            <form method="get" action="@Url.Action("HighlightSearch", "Note")">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="query" placeholder="Enter search term..." value="@ViewBag.Query">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="searchSummary" class="mb-3">
+        <!-- This div will be populated by JavaScript with unsanitized search terms -->
+    </div>
+    
+    @if (Model != null && Model.Any())
+    {
+        <h2>Search Results (@Model.Count)</h2>
+        
+        <div class="row">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-12 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <!-- Intentionally vulnerable: Rendering highlighted title without encoding -->
+                            <h5 class="card-title">@Html.Raw(item.HighlightedTitle)</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Intentionally vulnerable: Rendering highlighted content without encoding -->
+                            @Html.Raw(item.HighlightedContent.Length > 500 ? item.HighlightedContent.Substring(0, 500) + "..." : item.HighlightedContent)
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Created @item.Note.CreatedAt.ToString("yyyy-MM-dd")</small>
+                                <div>
+                                    <a href="@Url.Action("Details", "Note", new { id = item.Note.Id })" class="btn btn-sm btn-primary">View</a>
+                                    @if (Context.Session.GetInt32("UserId") == item.Note.UserId)
+                                    {
+                                        <a href="@Url.Action("Edit", "Note", new { id = item.Note.Id })" class="btn btn-sm btn-warning">Edit</a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (ViewBag.Query != null)
+    {
+        <div class="alert alert-info">No notes found matching your search criteria.</div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    $(function() {
+        // Parse query string
+        var urlParams = new URLSearchParams(window.location.search);
+        var query = urlParams.get('query');
+        
+        // Intentionally vulnerable: Direct DOM injection without sanitization
+        if (query) {
+            $('#searchSummary').html('<div class="alert alert-info">Showing results for: <strong>' + query + '</strong></div>');
+            
+            // Vulnerable to XSS: Setting document.title with unsanitized input
+            document.title = 'Search results for: ' + query;
+            
+            // Vulnerable to XSS: Setting localStorage with unsanitized input
+            localStorage.setItem('lastSearch', query);
+            
+            // Vulnerable: Creating a dynamic script element
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.text = "console.log('Searched for: " + query + "');";
+            document.body.appendChild(script);
+        }
+    });
+</script>
+}

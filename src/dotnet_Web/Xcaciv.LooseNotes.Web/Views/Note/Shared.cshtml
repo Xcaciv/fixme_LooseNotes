@@ -1,0 +1,49 @@
+@model Xcaciv.LooseNotes.Web.Models.Note
+
+@{
+    ViewData["Title"] = "Shared Note";
+}
+
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h1>@Model.Title</h1>
+            <small class="text-muted">Shared note</small>
+        </div>
+        <div class="card-body">
+            <!-- Insecure: Raw HTML rendering - XSS vulnerability -->
+            @Html.Raw(Model.Content)
+        </div>
+        <div class="card-footer text-muted">
+            <div class="row">
+                <div class="col-md-6">
+                    Created: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                </div>
+                <div class="col-md-6 text-end">
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <span>Last updated: @Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                Attachment
+            </div>
+            <div class="card-body">
+                <a asp-action="Download" asp-route-filePath="@Model.AttachmentPath" class="btn btn-outline-primary">
+                    <i class="bi bi-download"></i> Download Attachment (@System.IO.Path.GetFileName(Model.AttachmentPath))
+                </a>
+            </div>
+        </div>
+    }
+    
+    <div class="alert alert-info">
+        <p>This note has been shared with you. To create your own notes, please <a asp-controller="User" asp-action="Login">log in</a> or <a asp-controller="User" asp-action="Register">register</a>.</p>
+    </div>
+</div>

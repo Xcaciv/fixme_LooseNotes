@@ -1,0 +1,150 @@
+@{
+    ViewData["Title"] = "Top Rated Notes";
+}
+
+<h1>Top Rated Notes</h1>
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <div class="alert alert-danger">
+        @Html.Raw(ViewBag.Error)
+    </div>
+}
+
+<div class="mb-4">
+    <form method="get" action="@Url.Action("TopRated")" class="form-inline">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Show Top</span>
+            </div>
+            <input type="number" class="form-control" name="count" value="10" min="1" style="max-width: 100px;">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="submit">Apply</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    @if (Model != null)
+    {
+        foreach (var item in Model)
+        {
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">@item.Note.Title</h5>
+                        <div class="star-rating-display">
+                            @for (int i = 0; i < Math.Round(item.AverageRating); i++)
+                            {
+                                <span class="text-warning">★</span>
+                            }
+                            @for (int i = (int)Math.Round(item.AverageRating); i < 5; i++)
+                            {
+                                <span class="text-secondary">☆</span>
+                            }
+                            <span class="ml-2">(@item.AverageRating.ToString("F1"))</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Insecure: Truncating without proper sanitization -->
+                        <p>@Html.Raw(item.Note.Content.Length > 200 ? item.Note.Content.Substring(0, 200) + "..." : item.Note.Content)</p>
+                        
+                        <a asp-action="Details" asp-route-id="@item.Note.Id" class="btn btn-primary">View Note</a>
+                        <a asp-action="Ratings" asp-route-noteId="@item.Note.Id" class="btn btn-info">View Ratings</a>
+                    </div>
+                    <div class="card-footer text-muted">
+                        Created: @item.Note.CreatedAt.ToString("g")
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col">
+            <p>No notes found.</p>
+        </div>
+    }
+</div>
+
+<div class="mt-4">
+    <h3>Generate Ratings Report</h3>
+    <form id="reportForm" action="@Url.Action("RatingsReport")" method="post">
+        <div class="form-group mb-3">
+            <label>Date Range:</label>
+            <select name="dateRange" class="form-control">
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <!-- Insecure: Allowing custom input that could lead to command injection -->
+                <option value="custom">Custom (enter below)</option>
+            </select>
+        </div>
+        
+        <div id="customDateRange" class="form-group mb-3" style="display: none;">
+            <label>Custom Range:</label>
+            <!-- Insecure: Direct input for dateRange that could be used for injection -->
+            <input type="text" name="customDateRange" class="form-control" 
+                   placeholder="Format: YYYY-MM-DD;YYYY-MM-DD or enter commands">
+        </div>
+        
+        <div class="form-group mb-3">
+            <label>Format:</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="format" id="formatCsv" value="csv" checked>
+                <label class="form-check-label" for="formatCsv">CSV</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="format" id="formatJson" value="json">
+                <label class="form-check-label" for="formatJson">JSON</label>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Generate Report</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('select[name="dateRange"]').change(function() {
+                if ($(this).val() === 'custom') {
+                    $('#customDateRange').show();
+                } else {
+                    $('#customDateRange').hide();
+                }
+            });
+            
+            $('#reportForm').submit(function(e) {
+                e.preventDefault();
+                
+                var dateRange = $('select[name="dateRange"]').val();
+                if (dateRange === 'custom') {
+                    dateRange = $('input[name="customDateRange"]').val();
+                }
+                
+                var format = $('input[name="format"]:checked').val();
+                
+                // Insecure: Direct form submission with potentially dangerous input
+                var form = $('<form>', {
+                    'action': '@Url.Action("RatingsReport")',
+                    'method': 'post',
+                    'target': '_blank'
+                }).append($('<input>', {
+                    'name': 'dateRange',
+                    'value': dateRange,
+                    'type': 'hidden'
+                })).append($('<input>', {
+                    'name': 'format',
+                    'value': format,
+                    'type': 'hidden'
+                }));
+                
+                $('body').append(form);
+                form.submit();
+                form.remove();
+            });
+        });
+    </script>
+}

@@ -1,0 +1,147 @@
+@model Xcaciv.LooseNotes.Web.Models.Note
+
+@{
+    ViewData["Title"] = "Note Details";
+}
+
+<div class="container">
+    <h1>@Model.Title</h1>
+    
+    <div class="row mb-3">
+        <div class="col text-end">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+            <a asp-action="Share" asp-route-id="@Model.Id" class="btn btn-success">Share</a>
+            <a asp-action="RawContent" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-secondary">View Raw HTML</a>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <!-- Insecure: Rendering raw HTML content -->
+            @Html.Raw(Model.Content)
+        </div>
+        <div class="card-footer text-muted">
+            <div class="row">
+                <div class="col-md-6">
+                    Created: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                    <br>From IP: @Model.CreatedFromIp
+                </div>
+                <div class="col-md-6 text-end">
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <span>Last updated: @Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                Attachment
+            </div>
+            <div class="card-body">
+                <a asp-action="Download" asp-route-filePath="@Model.AttachmentPath" class="btn btn-outline-primary">
+                    <i class="bi bi-download"></i> Download Attachment (@System.IO.Path.GetFileName(Model.AttachmentPath))
+                </a>
+            </div>
+        </div>
+    }
+
+    @if (ViewBag.Ratings != null && ViewBag.Ratings.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                Ratings and Reviews (@ViewBag.AverageRating.ToString("0.0") average)
+            </div>
+            <div class="card-body">
+                <a asp-action="Ratings" asp-route-noteId="@Model.Id" class="btn btn-info">View All Ratings</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                No Ratings Yet
+            </div>
+            <div class="card-body">
+                <a asp-action="Ratings" asp-route-noteId="@Model.Id" class="btn btn-info">Be the first to rate this note</a>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            Rate this Note
+        </div>
+        <div class="card-body">
+            <form id="ratingForm">
+                <input type="hidden" id="noteId" name="noteId" value="@Model.Id" />
+                
+                <div class="form-group mb-3">
+                    <label for="stars">Rating (1-5 stars):</label>
+                    <select id="stars" name="stars" class="form-control">
+                        <option value="1">1 Star</option>
+                        <option value="2">2 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="5" selected>5 Stars</option>
+                    </select>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label for="comment">Comment:</label>
+                    <textarea id="comment" name="comment" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input type="checkbox" id="allowHtml" name="allowHtml" class="form-check-input" />
+                    <label class="form-check-label" for="allowHtml">Allow HTML in comment</label>
+                </div>
+                
+                <button type="button" id="submitRating" class="btn btn-primary">Submit Rating</button>
+            </form>
+            <div id="ratingResult" class="mt-3"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function() {
+            $('#submitRating').click(function() {
+                var noteId = $('#noteId').val();
+                var stars = $('#stars').val();
+                var comment = $('#comment').val();
+                var allowHtml = $('#allowHtml').prop('checked');
+                
+                $.ajax({
+                    url: '@Url.Action("RateNote")',
+                    type: 'POST',
+                    data: {
+                        noteId: noteId,
+                        stars: stars,
+                        comment: comment,
+                        allowHtml: allowHtml
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#ratingResult').html('<div class="alert alert-success">Rating submitted successfully!</div>');
+                            $('#comment').val('');
+                        } else {
+                            $('#ratingResult').html('<div class="alert alert-danger">Error: ' + response.error + '</div>');
+                        }
+                    },
+                    error: function() {
+                        $('#ratingResult').html('<div class="alert alert-danger">An error occurred while submitting your rating.</div>');
+                    }
+                });
+            });
+        });
+    </script>
+}

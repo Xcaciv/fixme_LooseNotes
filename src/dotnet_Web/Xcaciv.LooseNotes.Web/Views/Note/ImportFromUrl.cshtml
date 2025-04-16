@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Import Note from URL";
+}
+
+<div class="container">
+    <h1>Import Note from URL</h1>
+    
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">
+            <h4>Error</h4>
+            <p>@ViewBag.Error</p>
+        </div>
+    }
+    
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="ImportFromUrl" method="post">
+                <div class="form-group mb-3">
+                    <label for="url">URL to Import From:</label>
+                    <input type="url" id="url" name="url" class="form-control" required 
+                           placeholder="https://example.com/content-to-import" />
+                    <small class="form-text text-muted">
+                        Enter the URL of the webpage or text content you want to import as a note.
+                        <!-- Insecure: No validation on what URLs can be used -->
+                    </small>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <strong>Warning!</strong> This feature will import the raw HTML content of the URL and save it as a note.
+                    Importing content from untrusted sources could pose security risks.
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Import Content</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

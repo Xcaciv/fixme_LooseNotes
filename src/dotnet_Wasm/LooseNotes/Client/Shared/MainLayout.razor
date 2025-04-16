@@ -1,0 +1,55 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<div class="page @(IsDarkMode ? "dark-mode" : "light-mode")">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 justify-content-between">
+            <div>
+                <button class="btn btn-sm @(IsDarkMode ? "btn-light" : "btn-dark")" @onclick="ToggleTheme">
+                    <i class="@(IsDarkMode ? "oi oi-sun" : "oi oi-moon")"></i>
+                    @(IsDarkMode ? "Light Mode" : "Dark Mode")
+                </button>
+            </div>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="d-flex align-items-center">
+                        <span class="me-3">Hello, @context.User.Identity?.Name!</span>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="Logout">Logout</button>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div>
+                        <a href="login" class="btn btn-sm btn-outline-primary me-2">Login</a>
+                        <a href="register" class="btn btn-primary">Register</a>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private bool IsDarkMode { get; set; }
+
+    private void ToggleTheme()
+    {
+        IsDarkMode = !IsDarkMode;
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/");
+    }
+}

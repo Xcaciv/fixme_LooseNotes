@@ -1,0 +1,42 @@
+@model Xcaciv.LooseNotes.Web.Models.User
+
+@{
+    ViewData["Title"] = "Delete User";
+}
+
+<h1>Delete User</h1>
+
+<div class="alert alert-danger">
+    <h3>Are you sure you want to delete this user?</h3>
+    <p>This will permanently delete the user account and all associated data.</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>User Details</h4>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+            
+            <dt class="col-sm-3">Username</dt>
+            <dd class="col-sm-9">@Model.Username</dd>
+            
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+            
+            <dt class="col-sm-3">Role</dt>
+            <dd class="col-sm-9">@Model.Role</dd>
+            
+            <dt class="col-sm-3">Notes Count</dt>
+            <dd class="col-sm-9">@(Model.Notes?.Count ?? 0)</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="DeleteConfirmed" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="AdminDashboard" class="btn btn-secondary">Cancel</a>
+</form>

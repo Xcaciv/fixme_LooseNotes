@@ -1,0 +1,105 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject INoteService NoteService
+
+<PageTitle>Loose Notes - Secure Note Taking</PageTitle>
+
+<div class="container">
+    <div class="row justify-content-center my-5">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">Welcome to Loose Notes</h1>
+            <p class="lead mb-5">A secure, multi-user note-taking platform built with Blazor WebAssembly</p>
+            
+            <AuthorizeView>
+                <Authorized>
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                        <a href="my-notes" class="btn btn-primary btn-lg px-4 gap-3">My Notes</a>
+                        <a href="create-note" class="btn btn-outline-secondary btn-lg px-4">Create Note</a>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                        <a href="register" class="btn btn-primary btn-lg px-4 gap-3">Get Started</a>
+                        <a href="login" class="btn btn-outline-secondary btn-lg px-4">Sign In</a>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="oi oi-lock-locked me-2"></i>Secure</h5>
+                    <p class="card-text">Your notes are secured with industry-standard encryption and protected with modern authentication measures.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="oi oi-share me-2"></i>Shareable</h5>
+                    <p class="card-text">Share your notes with others using secure, expiring links or make them public for everyone to enjoy.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="oi oi-cloud-upload me-2"></i>Cloud-Based</h5>
+                    <p class="card-text">Access your notes from anywhere, on any device, with our cloud-based solution.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (topRatedNotes != null && topRatedNotes.Any())
+    {
+        <div class="row mt-5">
+            <div class="col-12">
+                <h2 class="text-center mb-4">Top Rated Notes</h2>
+                <div class="row">
+                    @foreach (var note in topRatedNotes)
+                    {
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">@note.Title</h5>
+                                    <p class="card-text">@(note.Content.Length > 100 ? note.Content.Substring(0, 100) + "..." : note.Content)</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">By @note.UserName</small>
+                                        <div>
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="oi oi-star"></i> @note.AverageRating.ToString("F1")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <a href="@($"note/{note.Id}")" class="btn btn-sm btn-outline-primary">Read More</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="text-center mt-3">
+                    <a href="top-rated" class="btn btn-outline-primary">View All Top Rated Notes</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<NoteDto>? topRatedNotes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await NoteService.GetTopRatedNotesAsync(6);
+        if (response.Success)
+        {
+            topRatedNotes = response.Data;
+        }
+    }
+}

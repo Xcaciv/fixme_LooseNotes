@@ -1,0 +1,508 @@
+@page "/note/{Id:int}"
+@page "/notes/shared/{Token}"
+@using Xcaciv.LooseNotes.Wasm.Shared.DTOs
+@using Xcaciv.LooseNotes.Wasm.Client.Services
+@inject INoteService NoteService
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+
+<PageTitle>@(note?.Title ?? "Note Details") - Loose Notes</PageTitle>
+
+<div class="container mt-4">
+    @if (isLoading)
+    {
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    }
+    else if (note == null)
+    {
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Note Not Found</h4>
+            <p>The note you're looking for doesn't exist or you don't have permission to view it.</p>
+            <hr>
+            <p class="mb-0">
+                <button class="btn btn-outline-primary" @onclick="GoToNotes">Back to Notes</button>
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="card-title h3 mb-0">@note.Title</h1>
+                            @if (note.IsPublic)
+                            {
+                                <span class="badge bg-success">Public</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Private</span>
+                            }
+                        </div>
+                        
+                        @if (isCurrentUserOwner)
+                        {
+                            <div>
+                                <button class="btn btn-outline-primary me-2" @onclick="EditNote">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="DeleteNote">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <!-- Note content - intentionally vulnerable to XSS -->
+                            @((MarkupString)note.Content)
+                        </div>
+                        
+                        @if (note.Attachments != null && note.Attachments.Any())
+                        {
+                            <div class="mt-4">
+                                <h5>Attachments</h5>
+                                <div class="list-group">
+                                    @foreach (var attachment in note.Attachments)
+                                    {
+                                        <a href="@NoteService.GetAttachmentDownloadUrl(note.Id, attachment.Id)" 
+                                           class="list-group-item list-group-item-action" target="_blank">
+                                            <i class="bi bi-paperclip me-2"></i>
+                                            @attachment.FileName
+                                            <small class="text-muted">(@FormatFileSize(attachment.FileSize))</small>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        
+                        <div class="mt-4 text-muted">
+                            <small>
+                                Created by @note.UserName on @note.CreatedAt.ToString("MMM d, yyyy")
+                                @if (note.UpdatedAt.HasValue)
+                                {
+                                    <span>(Updated: @note.UpdatedAt.Value.ToString("MMM d, yyyy"))</span>
+                                }
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                @if (isAuthenticated)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Rate This Note</h5>
+                        </div>
+                        <div class="card-body">
+                            <EditForm Model="@ratingDto" OnValidSubmit="SubmitRating">
+                                <DataAnnotationsValidator />
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Rating</label>
+                                    <div>
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            int rating = i;
+                                            <button type="button" class="btn btn-outline-warning btn-sm me-1 @(ratingDto.Rating == rating ? "active" : "")"
+                                                    @onclick="() => ratingDto.Rating = rating">
+                                                <i class="bi bi-star-fill"></i> @rating
+                                            </button>
+                                        }
+                                    </div>
+                                    <ValidationMessage For="@(() => ratingDto.Rating)" />
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Comment</label>
+                                    <InputTextArea id="comment" class="form-control" rows="3" @bind-Value="ratingDto.Comment" />
+                                </div>
+                                
+                                @if (ratingError != null)
+                                {
+                                    <div class="alert alert-danger">@ratingError</div>
+                                }
+                                
+                                <button type="submit" class="btn btn-primary" disabled="@isRatingSubmitting">
+                                    @if (isRatingSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        <span class="ms-1">Submitting...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Submit Rating</span>
+                                    }
+                                </button>
+                            </EditForm>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <p>You need to <a href="/login">log in</a> to rate this note.</p>
+                    </div>
+                }
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ratings and Comments (@(note.Ratings?.Count ?? 0))</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (note.Ratings == null || !note.Ratings.Any())
+                        {
+                            <p>No ratings yet. Be the first to rate this note!</p>
+                        }
+                        else
+                        {
+                            <div class="list-group">
+                                @foreach (var rating in note.Ratings.OrderByDescending(r => r.CreatedAt))
+                                {
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    if (i <= rating.Rating)
+                                                    {
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-star text-warning"></i>
+                                                    }
+                                                }
+                                                <span class="ms-2 fw-bold">@rating.UserName</span>
+                                                <span class="text-muted ms-2">@rating.CreatedAt.ToString("MMM d, yyyy")</span>
+                                            </div>
+                                            
+                                            @if (userId == rating.UserId)
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteRating(rating.Id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                        
+                                        @if (!string.IsNullOrEmpty(rating.Comment))
+                                        {
+                                            <p class="mt-2 mb-0">@rating.Comment</p>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                @if (isCurrentUserOwner)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Share This Note</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (string.IsNullOrEmpty(shareUrl))
+                            {
+                                <p>Generate a share link to let others view this note, even if it's private.</p>
+                                <button class="btn btn-primary" @onclick="GenerateShareLink" disabled="@isGeneratingShareLink">
+                                    @if (isGeneratingShareLink)
+                                    {
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        <span class="ms-1">Generating...</span>
+                                    }
+                                    else
+                                    {
+                                        <span><i class="bi bi-link-45deg"></i> Generate Share Link</span>
+                                    }
+                                </button>
+                                
+                                @if (shareError != null)
+                                {
+                                    <div class="alert alert-danger mt-3">@shareError</div>
+                                }
+                            }
+                            else
+                            {
+                                <p>Share this link with others to let them view this note:</p>
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" value="@shareUrl" readonly />
+                                    <button class="btn btn-outline-secondary" @onclick="CopyShareLink">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                
+                                @if (copySuccess)
+                                {
+                                    <div class="alert alert-success">Link copied to clipboard!</div>
+                                }
+                                
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="GenerateNewShareLink">
+                                    <i class="bi bi-arrow-repeat"></i> Generate New Link
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Note Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Average Rating
+                                <span class="badge bg-primary rounded-pill">
+                                    @if (note.RatingCount > 0)
+                                    {
+                                        <span>@note.AverageRating.ToString("0.0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>N/A</span>
+                                    }
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Ratings
+                                <span class="badge bg-primary rounded-pill">@note.RatingCount</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Attachments
+                                <span class="badge bg-primary rounded-pill">@note.AttachmentCount</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    
+    [Parameter]
+    public string? Token { get; set; }
+    
+    private NoteDto? note;
+    private bool isLoading = true;
+    private bool isAuthenticated = false;
+    private string? userId;
+    private bool isCurrentUserOwner = false;
+    
+    private NoteRatingDto ratingDto = new();
+    private bool isRatingSubmitting = false;
+    private string? ratingError;
+    
+    private string? shareUrl;
+    private bool isGeneratingShareLink = false;
+    private string? shareError;
+    private bool copySuccess = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthService.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User?.Identity?.IsAuthenticated ?? false;
+        
+        if (isAuthenticated)
+        {
+            userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
+        
+        await LoadNote();
+    }
+
+    private async Task LoadNote()
+    {
+        isLoading = true;
+        
+        if (!string.IsNullOrEmpty(Token))
+        {
+            // Load shared note by token
+            var response = await NoteService.GetNoteByShareTokenAsync(Token);
+            if (response.Success && response.Data != null)
+            {
+                note = response.Data;
+                
+                // Set up rating
+                ratingDto = new NoteRatingDto { NoteId = note.Id };
+                
+                // Check if current user is owner
+                isCurrentUserOwner = isAuthenticated && userId == note.UserId;
+                
+                // Set share URL if this is a shared note
+                shareUrl = NavigationManager.Uri;
+            }
+        }
+        else if (Id.HasValue)
+        {
+            // Load note by ID
+            var response = await NoteService.GetNoteByIdAsync(Id.Value);
+            if (response.Success && response.Data != null)
+            {
+                note = response.Data;
+                
+                // Set up rating
+                ratingDto = new NoteRatingDto { NoteId = note.Id };
+                
+                // Check if current user is owner
+                isCurrentUserOwner = isAuthenticated && userId == note.UserId;
+            }
+        }
+        
+        isLoading = false;
+    }
+
+    private void EditNote()
+    {
+        if (note != null)
+        {
+            NavigationManager.NavigateTo($"/note/edit/{note.Id}");
+        }
+    }
+
+    private async Task DeleteNote()
+    {
+        if (note == null)
+        {
+            return;
+        }
+        
+        // In a real app, we'd show a confirmation dialog
+        var result = await NoteService.DeleteNoteAsync(note.Id);
+        
+        if (result.Success)
+        {
+            NavigationManager.NavigateTo("/my-notes");
+        }
+    }
+    
+    private async Task SubmitRating()
+    {
+        if (note == null || !isAuthenticated)
+        {
+            return;
+        }
+        
+        isRatingSubmitting = true;
+        ratingError = null;
+        
+        var response = await NoteService.RateNoteAsync(note.Id, ratingDto);
+        
+        if (response.Success)
+        {
+            // Refresh note to get updated ratings
+            await LoadNote();
+            
+            // Reset rating form
+            ratingDto = new NoteRatingDto { NoteId = note.Id };
+        }
+        else
+        {
+            ratingError = response.Message;
+        }
+        
+        isRatingSubmitting = false;
+    }
+    
+    private async Task DeleteRating(int ratingId)
+    {
+        if (!isAuthenticated)
+        {
+            return;
+        }
+        
+        var response = await NoteService.DeleteRatingAsync(ratingId);
+        
+        if (response.Success)
+        {
+            // Refresh note to get updated ratings
+            await LoadNote();
+        }
+    }
+    
+    private async Task GenerateShareLink()
+    {
+        if (note == null || !isCurrentUserOwner)
+        {
+            return;
+        }
+        
+        isGeneratingShareLink = true;
+        shareError = null;
+        
+        var response = await NoteService.GenerateShareTokenAsync(note.Id);
+        
+        if (response.Success && !string.IsNullOrEmpty(response.Data))
+        {
+            shareUrl = response.Data;
+        }
+        else
+        {
+            shareError = response.Message;
+        }
+        
+        isGeneratingShareLink = false;
+    }
+    
+    private void GenerateNewShareLink()
+    {
+        shareUrl = null;
+        GenerateShareLink();
+    }
+    
+    private void CopyShareLink()
+    {
+        if (string.IsNullOrEmpty(shareUrl))
+        {
+            return;
+        }
+        
+        try
+        {
+            // This requires JavaScript interop in a real app
+            copySuccess = true;
+            
+            // Reset after 3 seconds
+            Task.Delay(3000).ContinueWith(_ =>
+            {
+                copySuccess = false;
+                StateHasChanged();
+            });
+        }
+        catch
+        {
+            copySuccess = false;
+        }
+    }
+    
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double size = bytes;
+        
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size /= 1024;
+        }
+        
+        return $"{size:0.##} {sizes[order]}";
+    }
+    
+    private void GoToNotes()
+    {
+        NavigationManager.NavigateTo("/my-notes");
+    }
+}

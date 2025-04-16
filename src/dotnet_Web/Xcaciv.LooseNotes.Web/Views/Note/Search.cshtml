@@ -1,0 +1,85 @@
+@model List<Xcaciv.LooseNotes.Web.Models.Note>
+
+@{
+    ViewData["Title"] = "Search Notes";
+}
+
+<div class="container">
+    <h1>Search Results</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form asp-action="Search" method="get">
+                <div class="input-group">
+                    <input type="text" name="query" class="form-control" value="@ViewBag.Query" placeholder="Search notes..." />
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+                <small class="form-text text-muted">
+                    Search your notes by title or content. Results include your notes and public notes.
+                </small>
+            </form>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(ViewBag.Query))
+    {
+        <div class="mb-3">
+            <h3>Results for: @ViewBag.Query</h3>
+            <p>Found @Model.Count note(s)</p>
+        </div>
+    }
+    
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            No notes found matching your search criteria.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var note in Model)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5>@note.Title</h5>
+                            @if (note.IsPublic)
+                            {
+                                <span class="badge bg-success">Public</span>
+                            }
+                            else 
+                            {
+                                <span class="badge bg-secondary">Private</span>
+                            }
+                        </div>
+                        <div class="card-body">
+                            @{
+                                // Insecure: Raw HTML rendering - XSS vulnerability
+                                var preview = note.Content;
+                                if (preview.Length > 200)
+                                {
+                                    preview = preview.Substring(0, 200) + "...";
+                                }
+                            }
+                            @Html.Raw(preview)
+                        </div>
+                        <div class="card-footer">
+                            <div class="btn-group">
+                                <a asp-action="Details" asp-route-id="@note.Id" class="btn btn-sm btn-primary">View</a>
+                                <a asp-action="Edit" asp-route-id="@note.Id" class="btn btn-sm btn-secondary">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@note.Id" class="btn btn-sm btn-danger">Delete</a>
+                            </div>
+                            <small class="text-muted d-block mt-2">Created: @note.CreatedAt.ToString("yyyy-MM-dd")</small>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-secondary">Back to Notes</a>
+        <a asp-action="Create" class="btn btn-success">Create New Note</a>
+    </div>
+</div>

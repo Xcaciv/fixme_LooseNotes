@@ -1,0 +1,182 @@
+@{
+    ViewData["Title"] = "Admin Note Reassignment";
+}
+
+<h1>Admin Note Reassignment</h1>
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <div class="alert alert-danger">
+        @ViewBag.Error
+    </div>
+    return;
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Individual Note Reassignment</h3>
+            <form id="reassignForm">
+                <div class="form-group">
+                    <label for="noteId">Select Note:</label>
+                    <select class="form-control" id="noteId" name="noteId" required>
+                        <option value="">--Select a note--</option>
+                        @if (ViewBag.Notes != null)
+                        {
+                            @foreach (var note in ViewBag.Notes)
+                            {
+                                <option value="@note.Id">@note.Title (User ID: @note.UserId)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newUserId">Reassign To User:</label>
+                    <select class="form-control" id="newUserId" name="newUserId" required>
+                        <option value="">--Select a user--</option>
+                        @if (ViewBag.Users != null)
+                        {
+                            @foreach (var user in ViewBag.Users)
+                            {
+                                <!-- Insecurely displaying all user information including email -->
+                                <option value="@user.Id">@user.Username (@user.Email)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reason">Reason for Reassignment:</label>
+                    <textarea class="form-control" id="reason" name="reason" rows="3"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Reassign Note</button>
+            </form>
+            
+            <div id="reassignResult" class="mt-3"></div>
+        </div>
+        
+        <div class="col-md-6">
+            <h3>Bulk Note Reassignment</h3>
+            <form id="bulkReassignForm">
+                <div class="form-group">
+                    <label>Select Notes:</label>
+                    <div class="form-check" id="noteCheckboxes">
+                        @if (ViewBag.Notes != null)
+                        {
+                            @foreach (var note in ViewBag.Notes)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input note-checkbox" type="checkbox" value="@note.Id" id="note@(note.Id)">
+                                    <label class="form-check-label" for="note@(note.Id)">
+                                        @note.Title (User ID: @note.UserId)
+                                    </label>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bulkNewUserId">Reassign To User:</label>
+                    <select class="form-control" id="bulkNewUserId" name="bulkNewUserId" required>
+                        <option value="">--Select a user--</option>
+                        @if (ViewBag.Users != null)
+                        {
+                            @foreach (var user in ViewBag.Users)
+                            {
+                                <option value="@user.Id">@user.Username (@user.Email)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bulkReason">Reason for Reassignment:</label>
+                    <textarea class="form-control" id="bulkReason" name="bulkReason" rows="3"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-warning">Bulk Reassign Notes</button>
+            </form>
+            
+            <div id="bulkReassignResult" class="mt-3"></div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="@Url.Action("ReassignmentLogs")" class="btn btn-info">View Reassignment Logs</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Insecure JavaScript with no CSRF protection
+        $(document).ready(function() {
+            // Single note reassignment
+            $('#reassignForm').submit(function(e) {
+                e.preventDefault();
+                var noteId = $('#noteId').val();
+                var newUserId = $('#newUserId').val();
+                var reason = $('#reason').val();
+                
+                $.ajax({
+                    url: '@Url.Action("ReassignNote")',
+                    type: 'POST',
+                    data: { noteId: noteId, newUserId: newUserId, reason: reason },
+                    success: function(result) {
+                        if (result.success) {
+                            $('#reassignResult').html('<div class="alert alert-success">' + result.message + '</div>');
+                            $('#reassignResult').append('<div class="text-muted">Log: ' + result.log + '</div>');
+                        } else {
+                            $('#reassignResult').html('<div class="alert alert-danger">' + result.message + '</div>');
+                        }
+                    },
+                    error: function(error) {
+                        // Insecurely displaying raw error
+                        $('#reassignResult').html('<div class="alert alert-danger">Error: ' + JSON.stringify(error) + '</div>');
+                    }
+                });
+            });
+            
+            // Bulk reassignment
+            $('#bulkReassignForm').submit(function(e) {
+                e.preventDefault();
+                var newUserId = $('#bulkNewUserId').val();
+                var reason = $('#bulkReason').val();
+                
+                var selectedNotes = [];
+                $('.note-checkbox:checked').each(function() {
+                    selectedNotes.push($(this).val());
+                });
+                
+                if (selectedNotes.length === 0) {
+                    $('#bulkReassignResult').html('<div class="alert alert-warning">Please select at least one note.</div>');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '@Url.Action("BulkReassign")',
+                    type: 'POST',
+                    data: { 
+                        noteIds: selectedNotes.join(','),
+                        newUserId: newUserId, 
+                        reason: reason 
+                    },
+                    success: function(result) {
+                        if (result.success) {
+                            $('#bulkReassignResult').html('<div class="alert alert-success">' + result.message + '</div>');
+                        } else {
+                            $('#bulkReassignResult').html('<div class="alert alert-danger">' + result.message + '</div>');
+                        }
+                    },
+                    error: function(error) {
+                        $('#bulkReassignResult').html('<div class="alert alert-danger">Error: ' + JSON.stringify(error) + '</div>');
+                    }
+                });
+            });
+        });
+    </script>
+}

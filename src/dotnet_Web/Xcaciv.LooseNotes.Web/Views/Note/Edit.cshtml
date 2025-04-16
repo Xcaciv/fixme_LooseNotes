@@ -1,0 +1,61 @@
+@model Xcaciv.LooseNotes.Web.Models.Note
+
+@{
+    ViewData["Title"] = "Edit Note";
+}
+
+<h1>Edit Note</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">
+                @ViewBag.Error
+            </div>
+        }
+
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="UserId" />
+            <input type="hidden" asp-for="CreatedAt" />
+            <input type="hidden" asp-for="CreatedFromIp" />
+            <input type="hidden" asp-for="ShareToken" />
+            <input type="hidden" asp-for="EncryptionKey" />
+            <input type="hidden" asp-for="AttachmentPath" />
+            
+            <div class="form-group mb-3">
+                <label asp-for="Title" class="control-label">Title</label>
+                <input asp-for="Title" class="form-control" required />
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Content" class="control-label">Content</label>
+                <textarea asp-for="Content" class="form-control" rows="10" required></textarea>
+                <small class="form-text text-muted">HTML content is allowed and will be rendered.</small>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="newAttachment" class="control-label">Replace Attachment (Optional)</label>
+                <input type="file" name="newAttachment" class="form-control" />
+                @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+                {
+                    <small class="form-text text-muted">
+                        Current attachment: @System.IO.Path.GetFileName(Model.AttachmentPath)
+                    </small>
+                }
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="IsPublic" type="checkbox" class="form-check-input" />
+                <label asp-for="IsPublic" class="form-check-label">Make this note public</label>
+                <small class="form-text text-muted d-block">Public notes can be viewed by anyone with the link.</small>
+            </div>
+            
+            <div class="form-group mb-3">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

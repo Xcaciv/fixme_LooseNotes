@@ -1,0 +1,211 @@
+@page "/public-notes"
+@using Xcaciv.LooseNotes.Wasm.Shared.DTOs
+@using Xcaciv.LooseNotes.Wasm.Client.Services
+@inject INoteService NoteService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Public Notes - Loose Notes</PageTitle>
+
+<h1>Public Notes</h1>
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <p class="lead">Explore notes shared by the community</p>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search public notes..." 
+                   @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleSearch" />
+            <button class="btn btn-outline-secondary" type="button" @onclick="SearchNotes">
+                <i class="bi bi-search"></i> Search
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+else if (notes == null || !notes.Any())
+{
+    <div class="alert alert-info">
+        No public notes available. Be the first to share a note with the community!
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var note in notes)
+        {
+            <div class="col">
+                <div class="card h-100 border-success">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">@note.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">@(note.Content.Length > 150 ? note.Content.Substring(0, 150) + "..." : note.Content)</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">By @note.UserName</small>
+                            @if (note.RatingCount > 0)
+                            {
+                                <small class="ms-2">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= Math.Round(note.AverageRating))
+                                        {
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-star text-warning"></i>
+                                        }
+                                    }
+                                    <span class="ms-1">(@note.RatingCount)</span>
+                                </small>
+                            }
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-primary" @onclick="() => ViewNote(note.Id)">
+                                View Note
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    
+    @if (!searchMode)
+    {
+        <div class="mt-4 d-flex justify-content-center">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(currentPage - 1)">Previous</button>
+                    </li>
+                    
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        var pageNumber = i;
+                        <li class="page-item @(currentPage == pageNumber ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                    
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(currentPage + 1)">Next</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+}
+
+@code {
+    private List<NoteDto> notes = new();
+    private bool isLoading = true;
+    private string searchTerm = string.Empty;
+    private Timer? searchTimer;
+    private bool searchMode = false;
+    
+    // For pagination
+    private int currentPage = 1;
+    private int itemsPerPage = 9;
+    private int totalPages = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPublicNotes();
+    }
+
+    private async Task LoadPublicNotes(int page = 1)
+    {
+        isLoading = true;
+        searchMode = false;
+        currentPage = page;
+        
+        var response = await NoteService.GetPublicNotesAsync();
+        
+        if (response.Success)
+        {
+            // For a proper implementation, the server should handle pagination
+            // Here we're simulating it on the client side
+            var allNotes = response.Data;
+            totalPages = (int)Math.Ceiling(allNotes.Count / (double)itemsPerPage);
+            
+            // Get paginated subset
+            int skip = (page - 1) * itemsPerPage;
+            notes = allNotes.Skip(skip).Take(itemsPerPage).ToList();
+        }
+        
+        isLoading = false;
+    }
+
+    private void ViewNote(int id)
+    {
+        NavigationManager.NavigateTo($"/note/{id}");
+    }
+
+    private void HandleSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SearchNotes();
+        }
+        else
+        {
+            // Debounce search with a timer
+            searchTimer?.Dispose();
+            searchTimer = new Timer(async _ =>
+            {
+                await InvokeAsync(() =>
+                {
+                    if (!string.IsNullOrWhiteSpace(searchTerm) && searchTerm.Length >= 2)
+                    {
+                        SearchNotes();
+                    }
+                    else if (string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        LoadPublicNotes();
+                    }
+                });
+            }, null, 500, Timeout.Infinite);
+        }
+    }
+
+    private async Task SearchNotes()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await LoadPublicNotes();
+            return;
+        }
+
+        isLoading = true;
+        searchMode = true;
+        
+        var response = await NoteService.SearchNotesAsync(searchTerm);
+        
+        if (response.Success)
+        {
+            notes = response.Data.Where(n => n.IsPublic).ToList();
+        }
+        
+        isLoading = false;
+    }
+    
+    private async Task ChangePage(int page)
+    {
+        if (page < 1 || page > totalPages)
+        {
+            return;
+        }
+        
+        await LoadPublicNotes(page);
+    }
+}

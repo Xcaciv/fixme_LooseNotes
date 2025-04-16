@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xcaciv.LooseNotes.Web", "Xcaciv.LooseNotes.Web\Xcaciv.LooseNotes.Web.csproj", "{5ED4FDDF-91F0-4287-8C71-459DA261B95F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xcaciv.LooseNotes.Web.Tests", "Xcaciv.LooseNotes.Web.Tests\Xcaciv.LooseNotes.Web.Tests.csproj", "{E95D7BA3-6151-4C8F-BFB7-F61145EBA871}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5ED4FDDF-91F0-4287-8C71-459DA261B95F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5ED4FDDF-91F0-4287-8C71-459DA261B95F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5ED4FDDF-91F0-4287-8C71-459DA261B95F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5ED4FDDF-91F0-4287-8C71-459DA261B95F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E95D7BA3-6151-4C8F-BFB7-F61145EBA871}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E95D7BA3-6151-4C8F-BFB7-F61145EBA871}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E95D7BA3-6151-4C8F-BFB7-F61145EBA871}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E95D7BA3-6151-4C8F-BFB7-F61145EBA871}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F5219526-E56C-465D-977F-D4474911EEF2}
+	EndGlobalSection
+EndGlobal

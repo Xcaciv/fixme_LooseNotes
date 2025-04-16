@@ -1,0 +1,54 @@
+@model Xcaciv.LooseNotes.Web.Models.User
+
+@{
+    ViewData["Title"] = "User Details";
+}
+
+<h1>User Details</h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">ID</dt>
+        <dd class="col-sm-10">@Model.Id</dd>
+        
+        <dt class="col-sm-2">Username</dt>
+        <dd class="col-sm-10">@Model.Username</dd>
+        
+        <dt class="col-sm-2">Email</dt>
+        <dd class="col-sm-10">@Model.Email</dd>
+        
+        <!-- Insecure: Displaying password in UI -->
+        <dt class="col-sm-2">Password</dt>
+        <dd class="col-sm-10">@Model.Password</dd>
+        
+        <dt class="col-sm-2">Role</dt>
+        <dd class="col-sm-10">@Model.Role</dd>
+        
+        <dt class="col-sm-2">Reset Token</dt>
+        <dd class="col-sm-10">@(Model.ResetToken ?? "None")</dd>
+        
+        <dt class="col-sm-2">Last Login</dt>
+        <dd class="col-sm-10">
+            @(Model.LastLogin.HasValue 
+                ? Model.LastLogin.Value.ToString("yyyy-MM-dd HH:mm") 
+                : "Never")
+        </dd>
+        
+        <dt class="col-sm-2">Notes</dt>
+        <dd class="col-sm-10">
+            @(Model.Notes?.Count ?? 0) notes
+            @if (Model.Notes?.Count > 0)
+            {
+                <a asp-controller="Note" asp-action="UserNotes" asp-route-userId="@Model.Id" class="btn btn-sm btn-info">
+                    View Notes
+                </a>
+            }
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+    <a asp-action="AdminDashboard" class="btn btn-secondary">Back to List</a>
+</div>
